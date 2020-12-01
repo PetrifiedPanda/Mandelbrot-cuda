@@ -129,7 +129,7 @@ __global__ void mandelbrotKernel(ImageGPU::Ref image, int maxIts, ColorStrategy 
     int pixelIndex = getThreadId();
     int pX = pixelIndex / image.cols();
     int pY = pixelIndex - pX * image.cols();
-    // printf("pX = %d, pY = %d\n", pX, pY);
+    
     if (pX < image.rows() && pY < image.cols()) {
         int it = mandelbrotIteration(pX, pY, image.rows(), image.cols(), maxIts);
 

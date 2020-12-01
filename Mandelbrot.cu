@@ -80,7 +80,7 @@ __device__ __host__ Color colorMandelbrot(ColorStrategy strat, int iterations, i
     return Color(0, 0, 0);
 }
 
-__host__ __device__ int mandelbrotIteration(int pX, int pY, int rows, int cols, int maxIts) {
+__host__ __device__ int mandelbrotIteration(int pX, int pY, size_t rows, size_t cols, int maxIts) {
     double scaledX = scale(pX, rows, -2, 1);
     double scaledY = scale(pY, cols, -1, 1);
 
@@ -99,8 +99,8 @@ __host__ __device__ int mandelbrotIteration(int pX, int pY, int rows, int cols, 
 
 Image mandelbrotCPU(int size, int maxIts, ColorStrategy strategy, bool invertColors) {
     Image image(size * 1.5, size);
-    int rows = image.rows();
-    int cols = image.cols();
+    size_t rows = image.rows();
+    size_t cols = image.cols();
 
     #pragma omp parallel for collapse(2)
     for (int pX = 0; pX < rows; ++pX) {
@@ -145,15 +145,15 @@ __global__ void mandelbrotKernel(ImageGPU::Ref image, int maxIts, ColorStrategy 
 
 Image mandelbrotGPU(int size, int maxIts, ColorStrategy strategy, bool invertColors) {
     ImageGPU gpuImage(size * 1.5, size);
-    int rows = gpuImage.rows();
-    int cols = gpuImage.cols();
+    size_t rows = gpuImage.rows();
+    size_t cols = gpuImage.cols();
 
     int suggestedMinGridSize;
     int suggestedBlockSize;
     cudaOccupancyMaxPotentialBlockSize(&suggestedMinGridSize, &suggestedBlockSize, mandelbrotKernel);
 
-    int blockDimX = sqrt(suggestedBlockSize);
-    int blockDimY = blockDimX;
+    size_t blockDimX = sqrt(suggestedBlockSize);
+    size_t blockDimY = blockDimX;
     dim3 blockDim(blockDimX, blockDimY);
     dim3 gridDim(ceil(static_cast<double>(cols) / blockDimX), ceil(static_cast<double>(rows) / blockDimY));
 

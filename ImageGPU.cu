@@ -4,7 +4,7 @@
 
 #include <cuda.h>
 
-ImageGPU::ImageGPU() : bytes_(nullptr) {}
+ImageGPU::ImageGPU() : rows_(0), cols_(0), channels_(0), bytes_(nullptr) {}
 
 ImageGPU::ImageGPU(size_t rows, size_t cols, size_t channels) : rows_(rows), cols_(cols), channels_(channels) {
     cudaMalloc(&bytes_, rows_ * cols_ * channels_ * sizeof(unsigned char));

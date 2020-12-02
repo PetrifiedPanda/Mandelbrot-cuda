@@ -52,9 +52,10 @@ const unsigned char& Image::operator()(size_t row, size_t col, size_t channel) c
 }
 
 
-void Image::writePPM(std::string filename) const {
+void Image::writePPM(const std::string& filename) const {
     std::ofstream writer(filename, std::ios::binary);
-    writer << "P6\n" << std::to_string(rows_) << " " << std::to_string(cols_) << "\n255\n";
+    std::string ppmFormat = channels_ == 1 ? "P5" : "P6";
+    writer << ppmFormat << "\n" << std::to_string(rows_) << " " << std::to_string(cols_) << "\n255\n";
     writer.write(reinterpret_cast<char*>(bytes_), rows_ * cols_ * channels_);
     writer.close();
 }

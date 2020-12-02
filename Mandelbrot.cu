@@ -60,8 +60,8 @@ __device__ __host__ double scale(int x, int rangeSize, double begin, double end)
     return begin + (end - begin) * x / rangeSize;
 }
 
-__device__ __host__ Color colorMandelbrot(ColorStrategy strat, int iterations, int maxIterations, int x, int y, const Color palette[16]) {
-    switch (strat) {
+__device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int maxIterations, int x, int y, const Color palette[16]) {
+    switch (strategy) {
         case ColorStrategy::GRAYSCALE: {
             unsigned char color = scale(iterations, maxIterations, 0, 255);
             return Color(color, color, color);
@@ -97,22 +97,32 @@ __host__ __device__ int mandelbrotIteration(int pX, int pY, size_t rows, size_t 
     return it;
 }
 
-Image mandelbrotCPU(int size, int maxIts, ColorStrategy strategy, bool invertColors) {
-    Image image(size * 1.5, size);
+template <class ImageType>
+__host__ __device__ void colorPixel(ImageType& image, size_t x, size_t y, int maxIts, ColorStrategy strategy, bool invertColors, const Color palette[16]) {
+    int it = mandelbrotIteration(x, y, image.rows(), image.cols(), maxIts);
+
+    Color clr = pickColor(strategy, it, maxIts, x, y, palette);
+    if (invertColors)
+        clr.invert();
+
+    if (strategy == ColorStrategy::GRAYSCALE)
+        image(x, y, 0) = clr.r;
+    else {
+        image(x, y, 0) = clr.r;
+        image(x, y, 1) = clr.g;
+        image(x, y, 2) = clr.b;
+    }
+}
+
+Image mandelbrotCPU(size_t size, int maxIts, ColorStrategy strategy, bool invertColors) {
+    Image image(size * 1.5, size, strategy == ColorStrategy::GRAYSCALE ? 1 : 3);
     size_t rows = image.rows();
     size_t cols = image.cols();
 
     #pragma omp parallel for collapse(2)
-    for (int pX = 0; pX < rows; ++pX) {
-        for (int pY = 0; pY < cols; ++pY) {
-            int it = mandelbrotIteration(pX, pY, rows, cols, maxIts);
-
-            Color clr = colorMandelbrot(strategy, it, maxIts, pX, pY, h_palette);
-            if (invertColors)
-                clr.invert();
-            image(pX, pY, 0) = clr.r;
-            image(pX, pY, 1) = clr.g;
-            image(pX, pY, 2) = clr.b;
+    for (int x = 0; x < rows; ++x) {
+        for (int y = 0; y < cols; ++y) {
+            colorPixel(image, x, y, maxIts, strategy, invertColors, h_palette);
         }
     }
 
@@ -127,25 +137,16 @@ __device__ int getThreadId() {
 
 __global__ void mandelbrotKernel(ImageGPU::Ref image, int maxIts, ColorStrategy strategy, bool invertColors) {
     int pixelIndex = getThreadId();
-    int pX = pixelIndex / image.cols();
-    int pY = pixelIndex - pX * image.cols();
+    int x = pixelIndex / image.cols();
+    int y = pixelIndex - x * image.cols();
     
-    if (pX < image.rows() && pY < image.cols()) {
-        int it = mandelbrotIteration(pX, pY, image.rows(), image.cols(), maxIts);
-
-        Color clr = colorMandelbrot(strategy, it, maxIts, pX, pY, d_palette);
-        if (invertColors)
-            clr.invert();
-        image(pX, pY, 0) = clr.r;
-        image(pX, pY, 1) = clr.g;
-        image(pX, pY, 2) = clr.b;
-    }
+    if (x < image.rows() && y < image.cols())
+        colorPixel(image, x, y, maxIts, strategy, invertColors, d_palette);
 }
 
 
-Image mandelbrotGPU(int size, int maxIts, ColorStrategy strategy, bool invertColors) {
-    // TODO: Make image have only one channel if ColorStrategy is grayscale
-    ImageGPU gpuImage(size * 1.5, size);
+Image mandelbrotGPU(size_t size, int maxIts, ColorStrategy strategy, bool invertColors) {
+    ImageGPU gpuImage(size * 1.5, size, strategy == ColorStrategy::GRAYSCALE ? 1 : 3);
     size_t rows = gpuImage.rows();
     size_t cols = gpuImage.cols();
 

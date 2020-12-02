@@ -6,6 +6,6 @@ enum class ColorStrategy {
     GRAYSCALE, CONTINUOUS, HISTOGRAM
 };
 
-Image mandelbrotCPU(int size, int maxIts, ColorStrategy strategy, bool invertColors = false);
+Image mandelbrotCPU(size_t size, int maxIts, ColorStrategy strategy, bool invertColors = false);
 
-Image mandelbrotGPU(int size, int maxIts, ColorStrategy strategy, bool invertColors = false);
+Image mandelbrotGPU(size_t size, int maxIts, ColorStrategy strategy, bool invertColors = false);

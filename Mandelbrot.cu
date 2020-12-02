@@ -1,7 +1,5 @@
 #include "Mandelbrot.h"
 
-#include <cmath>
-
 #include <omp.h>
 
 #include "ImageGPU.h"
@@ -18,7 +16,9 @@ struct Color {
     }
 };
 
-constexpr Color h_palette[16] = {
+constexpr size_t c_paletteSize = 16;
+
+constexpr Color h_palette[c_paletteSize] = {
     Color(66, 30, 15),
     Color(25, 7, 26),
     Color(9, 1, 47),
@@ -34,10 +34,10 @@ constexpr Color h_palette[16] = {
     Color(255, 170, 0),
     Color(204, 128, 0),
     Color(153, 87, 0),
-    Color(106, 52, 3)
+    Color(106, 52, 3),
 };
 
-__constant__ Color d_palette[16] = {
+__constant__ Color d_palette[c_paletteSize] = {
     Color(66, 30, 15),
     Color(25, 7, 26),
     Color(9, 1, 47),
@@ -53,14 +53,18 @@ __constant__ Color d_palette[16] = {
     Color(255, 170, 0),
     Color(204, 128, 0),
     Color(153, 87, 0),
-    Color(106, 52, 3)
+    Color(106, 52, 3),
 };
 
 __device__ __host__ double scale(int x, int rangeSize, double begin, double end) {
     return begin + (end - begin) * x / rangeSize;
 }
 
-__device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int maxIterations, int x, int y, const Color palette[16]) {
+__device__ __host__ double lerp(double start, double end, double amount) {
+    return start + amount * (end - start);
+}
+
+__device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int maxIterations, int x, int y, const Color palette[c_paletteSize]) {
     switch (strategy) {
         case ColorStrategy::GRAYSCALE: {
             unsigned char color = scale(iterations, maxIterations, 0, 255);
@@ -68,11 +72,23 @@ __device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int 
         }
         case ColorStrategy::CONTINUOUS: { 
             // TODO
+            double dIterations = iterations;
+            if (iterations < maxIterations) {
+                double logZN = log(static_cast<double>(x * x + y * y)) / 2;
+                double nu = log(logZN / log(2.0)) / log(2.0);
+                dIterations = dIterations + 1 - nu;
+            }
+            double fractional = dIterations - floor(static_cast<double>(dIterations));
+
+            Color color1 = palette[static_cast<size_t>(floor(static_cast<double>(dIterations))) % c_paletteSize];
+            Color color2 = palette[static_cast<size_t>(floor(static_cast<double>(dIterations)) + 1) % c_paletteSize];
+        
+            return Color(lerp(color1.r, color2.r, fractional), lerp(color1.g, color2.g, fractional), lerp(color1.b, color2.b, fractional));
         }
         case ColorStrategy::HISTOGRAM: {
             Color clr(0, 0, 0);
             if (iterations < maxIterations)
-                clr = palette[iterations % 16];
+                clr = palette[iterations % c_paletteSize];
 
             return clr;
         }
@@ -87,7 +103,7 @@ __host__ __device__ int mandelbrotIteration(int pX, int pY, size_t rows, size_t 
     double x = 0.0;
     double y = 0.0; 
     int it = 0;
-    while (x * x + y * y <= 2 * 2 && it < maxIts) {
+    while (x * x + y * y <= 4 && it < maxIts) {
         double tmpX = x * x - y * y + scaledX;
         y = 2 * x * y + scaledY;
         x = tmpX;

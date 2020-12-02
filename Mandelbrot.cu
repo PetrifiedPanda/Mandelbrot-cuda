@@ -144,6 +144,7 @@ __global__ void mandelbrotKernel(ImageGPU::Ref image, int maxIts, ColorStrategy 
 
 
 Image mandelbrotGPU(int size, int maxIts, ColorStrategy strategy, bool invertColors) {
+    // TODO: Make image have only one channel if ColorStrategy is grayscale
     ImageGPU gpuImage(size * 1.5, size);
     size_t rows = gpuImage.rows();
     size_t cols = gpuImage.cols();

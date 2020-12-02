@@ -3,7 +3,7 @@
 #include "Image.h"
 
 enum class ColorStrategy {
-    GRAYSCALE, CONTINUOUS, HISTOGRAM
+    GRAYSCALE, CONTINUOUS, ESCAPETIME
 };
 
 Image mandelbrotCPU(size_t size, int maxIts, ColorStrategy strategy, bool invertColors = false);

@@ -8,7 +8,7 @@ int main() {
     std::cout << "Generating Image!\n";
     auto start = std::chrono::high_resolution_clock::now();
     
-    Image image = mandelbrotGPU(9250, 1000, ColorStrategy::CONTINUOUS);
+    Image image = mandelbrotGPU(9250, 1000, ColorStrategy::ESCAPETIME);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto timeSpan = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);

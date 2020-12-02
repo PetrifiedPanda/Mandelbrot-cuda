@@ -85,7 +85,7 @@ __device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int 
         
             return Color(lerp(color1.r, color2.r, fractional), lerp(color1.g, color2.g, fractional), lerp(color1.b, color2.b, fractional));
         }
-        case ColorStrategy::HISTOGRAM: {
+        case ColorStrategy::ESCAPETIME: {
             Color clr(0, 0, 0);
             if (iterations < maxIterations)
                 clr = palette[iterations % c_paletteSize];

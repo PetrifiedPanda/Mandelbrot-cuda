@@ -64,6 +64,14 @@ __device__ __host__ double lerp(double start, double end, double amount) {
     return start + amount * (end - start);
 }
 
+__device__ __host__ unsigned char lerp(unsigned char start, unsigned char end, double amount) {
+    return start + amount * (static_cast<int>(end) - start);
+}
+
+__device__ __host__ Color lerp(Color start, Color end, double amount) {
+    return Color(lerp(start.r, end.r, amount), lerp(start.g, end.g, amount), lerp(start.b, end.b, amount));
+}
+
 __device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int maxIterations, int x, int y, const Color palette[c_paletteSize]) {
     switch (strategy) {
         case ColorStrategy::GRAYSCALE: {
@@ -72,7 +80,7 @@ __device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int 
         }
         case ColorStrategy::CONTINUOUS: { 
             // TODO
-            double dIterations = iterations;
+            double dIterations = static_cast<double>(iterations);
             if (iterations < maxIterations) {
                 double logZN = log(static_cast<double>(x * x + y * y)) / 2;
                 double nu = log(logZN / log(2.0)) / log(2.0);
@@ -82,8 +90,9 @@ __device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int 
 
             Color color1 = palette[static_cast<size_t>(floor(static_cast<double>(dIterations))) % c_paletteSize];
             Color color2 = palette[static_cast<size_t>(floor(static_cast<double>(dIterations)) + 1) % c_paletteSize];
-        
-            return Color(lerp(color1.r, color2.r, fractional), lerp(color1.g, color2.g, fractional), lerp(color1.b, color2.b, fractional));
+
+            Color finalColor = lerp(color1, color2, fractional);
+            return finalColor;
         }
         case ColorStrategy::ESCAPETIME: {
             Color clr(0, 0, 0);
@@ -96,9 +105,9 @@ __device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int 
     return Color(0, 0, 0);
 }
 
-__host__ __device__ int mandelbrotIteration(int pX, int pY, size_t rows, size_t cols, int maxIts) {
-    double scaledX = scale(pX, rows, -2, 1);
-    double scaledY = scale(pY, cols, -1, 1);
+__host__ __device__ int mandelbrotIteration(int pX, int pY, size_t xDim, size_t yDim, int maxIts) {
+    double scaledX = scale(pX, xDim, -2, 1);
+    double scaledY = scale(pY, yDim, -1, 1);
 
     double x = 0.0;
     double y = 0.0; 
@@ -115,7 +124,7 @@ __host__ __device__ int mandelbrotIteration(int pX, int pY, size_t rows, size_t 
 
 template <class ImageType>
 __host__ __device__ void colorPixel(ImageType& image, size_t x, size_t y, int maxIts, ColorStrategy strategy, bool invertColors, const Color palette[16]) {
-    int it = mandelbrotIteration(x, y, image.rows(), image.cols(), maxIts);
+    int it = mandelbrotIteration(x, y, image.xDim(), image.yDim(), maxIts);
 
     Color clr = pickColor(strategy, it, maxIts, x, y, palette);
     if (invertColors)
@@ -132,12 +141,12 @@ __host__ __device__ void colorPixel(ImageType& image, size_t x, size_t y, int ma
 
 Image mandelbrotCPU(size_t size, int maxIts, ColorStrategy strategy, bool invertColors) {
     Image image(size * 1.5, size, strategy == ColorStrategy::GRAYSCALE ? 1 : 3);
-    size_t rows = image.rows();
-    size_t cols = image.cols();
+    size_t xDim = image.xDim();
+    size_t yDim = image.yDim();
 
     #pragma omp parallel for collapse(2)
-    for (int x = 0; x < rows; ++x) {
-        for (int y = 0; y < cols; ++y) {
+    for (int x = 0; x < xDim; ++x) {
+        for (int y = 0; y < yDim; ++y) {
             colorPixel(image, x, y, maxIts, strategy, invertColors, h_palette);
         }
     }
@@ -153,18 +162,18 @@ __device__ int getThreadId() {
 
 __global__ void mandelbrotKernel(ImageGPU::Ref image, int maxIts, ColorStrategy strategy, bool invertColors) {
     int pixelIndex = getThreadId();
-    int x = pixelIndex / image.cols();
-    int y = pixelIndex - x * image.cols();
+    int y = pixelIndex / image.xDim();
+    int x = pixelIndex - y * image.xDim();
     
-    if (x < image.rows() && y < image.cols())
+    if (x < image.xDim() && y < image.yDim())
         colorPixel(image, x, y, maxIts, strategy, invertColors, d_palette);
 }
 
 
 Image mandelbrotGPU(size_t size, int maxIts, ColorStrategy strategy, bool invertColors) {
     ImageGPU gpuImage(size * 1.5, size, strategy == ColorStrategy::GRAYSCALE ? 1 : 3);
-    size_t rows = gpuImage.rows();
-    size_t cols = gpuImage.cols();
+    size_t xDim = gpuImage.xDim();
+    size_t yDim = gpuImage.yDim();
 
     int suggestedMinGridSize;
     int suggestedBlockSize;
@@ -173,7 +182,7 @@ Image mandelbrotGPU(size_t size, int maxIts, ColorStrategy strategy, bool invert
     size_t blockDimX = sqrt(suggestedBlockSize);
     size_t blockDimY = blockDimX;
     dim3 blockDim(blockDimX, blockDimY);
-    dim3 gridDim(ceil(static_cast<double>(cols) / blockDimX), ceil(static_cast<double>(rows) / blockDimY));
+    dim3 gridDim(ceil(static_cast<double>(xDim) / blockDimX), ceil(static_cast<double>(yDim) / blockDimY));
 
     mandelbrotKernel<<<gridDim, blockDim>>>(gpuImage.getRef(), maxIts, strategy, invertColors);
     cudaDeviceSynchronize();

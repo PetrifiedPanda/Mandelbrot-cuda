@@ -57,7 +57,27 @@ const unsigned char& Image::operator()(size_t x, size_t y, size_t channel) const
 void Image::writePPM(const std::string& filename) const {
     std::ofstream writer(filename, std::ios::binary);
     std::string ppmFormat = channels_ == 1 ? "P5" : "P6";
-    writer << ppmFormat << "\n" << std::to_string(xDim_) << " " << std::to_string(yDim_) << "\n255\n";
+    writer << ppmFormat << "\n" << xDim_ << " " << yDim_ << "\n255\n";
     writer.write(reinterpret_cast<char*>(bytes_), yDim_ * xDim_ * channels_);
     writer.close();
+}
+
+Image Image::readPPM(const std::string& filename) {
+    std::ifstream reader(filename, std::ios::binary);
+    std::string ppmFormat;
+    reader >> ppmFormat;
+    size_t channels = ppmFormat == "P5" ? 1 : 3;
+    size_t xDim, yDim;
+    int b;
+    reader >> xDim >> yDim >> b;
+    if (b != 255)
+        throw std::runtime_error("Cannot read file"); // TODO: Make this unnecessary
+
+    reader.ignore(256, '\n');
+
+    Image result(xDim, yDim, channels);
+    reader.read(reinterpret_cast<char*>(result.bytes_), xDim * yDim * channels);
+
+    reader.close();
+    return result;
 }

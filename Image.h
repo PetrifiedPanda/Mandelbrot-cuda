@@ -27,6 +27,8 @@ class Image {
     const unsigned char& operator()(size_t x, size_t y, size_t channel) const;
 
     void writePPM(const std::string& filename) const;
+
+    static Image readPPM(const std::string& filename);
 };
 
 #include "ImageGPU.h"

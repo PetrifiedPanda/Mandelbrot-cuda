@@ -88,9 +88,11 @@ __device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int 
     return Color(0, 0, 0);
 }
 
-__host__ __device__ int mandelbrotIteration(int pX, int pY, size_t xDim, size_t yDim, int maxIts) {
-    double scaledX = scale(pX, xDim, -2, 1);
-    double scaledY = scale(pY, yDim, -1, 1);
+__host__ __device__ int mandelbrotIteration(int pX, int pY, size_t xDim, size_t yDim, int maxIts, double zoom, int xOffset, int yOffset) {
+    double scaledXOffset = xOffset / static_cast<int>(xDim) * 3;
+    double scaledYOffset = yOffset / static_cast<int>(yDim) * 2;
+    double scaledX = scale(pX + xOffset, xDim, -2 / zoom + scaledXOffset, 1 / zoom + scaledXOffset);
+    double scaledY = scale(pY + yOffset, yDim, -1 / zoom + scaledYOffset, 1 / zoom + scaledYOffset);
 
     double x = 0.0;
     double y = 0.0; 
@@ -106,8 +108,8 @@ __host__ __device__ int mandelbrotIteration(int pX, int pY, size_t xDim, size_t 
 }
 
 template <class ImageType>
-__host__ __device__ void colorPixel(ImageType& image, size_t x, size_t y, int maxIts, ColorStrategy strategy, bool invertColors, const Color palette[16]) {
-    int it = mandelbrotIteration(x, y, image.xDim(), image.yDim(), maxIts);
+__host__ __device__ void colorPixel(ImageType& image, size_t x, size_t y, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors, const Color palette[16]) {
+    int it = mandelbrotIteration(x, y, image.xDim(), image.yDim(), maxIts, zoom, xOffset, yOffset);
 
     Color clr = pickColor(strategy, it, maxIts, x, y, palette);
     if (invertColors)
@@ -122,7 +124,7 @@ __host__ __device__ void colorPixel(ImageType& image, size_t x, size_t y, int ma
     }
 }
 
-Image mandelbrotCPU(size_t size, int maxIts, ColorStrategy strategy, bool invertColors) {
+Image mandelbrotCPU(size_t size, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors) {
     Image image(size * 1.5, size, strategy == ColorStrategy::GRAYSCALE ? 1 : 3);
     size_t xDim = image.xDim();
     size_t yDim = image.yDim();
@@ -130,7 +132,7 @@ Image mandelbrotCPU(size_t size, int maxIts, ColorStrategy strategy, bool invert
     #pragma omp parallel for collapse(2)
     for (int x = 0; x < xDim; ++x) {
         for (int y = 0; y < yDim; ++y) {
-            colorPixel(image, x, y, maxIts, strategy, invertColors, h_palette);
+            colorPixel(image, x, y, maxIts, zoom, xOffset, yOffset, strategy, invertColors, h_palette);
         }
     }
 
@@ -143,17 +145,17 @@ __device__ int getThreadId() {
     return blockId * (blockDim.x * blockDim.y) + threadId;
 }
 
-__global__ void mandelbrotKernel(ImageGPU::Ref image, int maxIts, ColorStrategy strategy, bool invertColors) {
+__global__ void mandelbrotKernel(ImageGPU::Ref image, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors) {
     int pixelIndex = getThreadId();
     int y = pixelIndex / image.xDim();
     int x = pixelIndex - y * image.xDim();
     
     if (x < image.xDim() && y < image.yDim())
-        colorPixel(image, x, y, maxIts, strategy, invertColors, d_palette);
+        colorPixel(image, x, y, maxIts, zoom, xOffset, yOffset, strategy, invertColors, d_palette);
 }
 
 
-Image mandelbrotGPU(size_t size, int maxIts, ColorStrategy strategy, bool invertColors) {
+Image mandelbrotGPU(size_t size, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors) {
     cudaMemcpyToSymbol(d_palette, h_palette, c_paletteSize * sizeof(Color));
     ImageGPU gpuImage(size * 1.5, size, strategy == ColorStrategy::GRAYSCALE ? 1 : 3);
     size_t xDim = gpuImage.xDim();
@@ -168,7 +170,7 @@ Image mandelbrotGPU(size_t size, int maxIts, ColorStrategy strategy, bool invert
     dim3 blockDim(blockDimX, blockDimY);
     dim3 gridDim(ceil(static_cast<double>(xDim) / blockDimX), ceil(static_cast<double>(yDim) / blockDimY));
 
-    mandelbrotKernel<<<gridDim, blockDim>>>(gpuImage.getRef(), maxIts, strategy, invertColors);
+    mandelbrotKernel<<<gridDim, blockDim>>>(gpuImage.getRef(), maxIts, zoom, xOffset, yOffset, strategy, invertColors);
     cudaDeviceSynchronize();
 
     return gpuImage.toHost();

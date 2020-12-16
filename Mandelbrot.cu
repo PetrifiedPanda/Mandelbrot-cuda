@@ -5,9 +5,9 @@
 #include "ImageGPU.h"
 
 struct Color {
-    unsigned char r, g, b;
+    uint8_t r, g, b;
     __host__ __device__ constexpr Color() : r(0), g(0), b() {}
-    __host__ __device__ constexpr Color(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b) {}
+    __host__ __device__ constexpr Color(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
     __host__ __device__ Color& invert() {
         r = 255 - r;
         g = 255 - g;
@@ -47,7 +47,7 @@ __device__ __host__ double lerp(double start, double end, double amount) {
     return start + amount * (end - start);
 }
 
-__device__ __host__ unsigned char lerp(unsigned char start, unsigned char end, double amount) {
+__device__ __host__ uint8_t lerp(uint8_t start, uint8_t end, double amount) {
     return start + amount * (static_cast<int>(end) - start);
 }
 
@@ -58,7 +58,7 @@ __device__ __host__ Color lerp(Color start, Color end, double amount) {
 __device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int maxIterations, int x, int y, const Color palette[c_paletteSize]) {
     switch (strategy) {
         case ColorStrategy::GRAYSCALE: {
-            unsigned char color = scale(iterations, maxIterations, 0, 255);
+            uint8_t color = scale(iterations, maxIterations, 0, 255);
             return Color(color, color, color);
         }
         case ColorStrategy::CONTINUOUS: { 

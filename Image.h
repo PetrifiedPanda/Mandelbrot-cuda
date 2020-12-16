@@ -8,7 +8,7 @@ class ImageGPU;
 class Image {
     friend class ImageGPU;
     size_t xDim_, yDim_, channels_;
-    unsigned char* bytes_;
+    uint8_t* bytes_;
 
    public:
     Image();
@@ -23,8 +23,8 @@ class Image {
 
     ImageGPU toDevice();
 
-    unsigned char& operator()(size_t x, size_t y, size_t channel);
-    const unsigned char& operator()(size_t x, size_t y, size_t channel) const;
+    uint8_t& operator()(size_t x, size_t y, size_t channel);
+    const uint8_t& operator()(size_t x, size_t y, size_t channel) const;
 
     void writePPM(const std::string& filename) const;
 

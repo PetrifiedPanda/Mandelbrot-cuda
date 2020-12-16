@@ -7,11 +7,11 @@
 ImageGPU::ImageGPU() : xDim_(0), yDim_(0), channels_(0), bytes_(nullptr) {}
 
 ImageGPU::ImageGPU(size_t xDim, size_t yDim, size_t channels) : xDim_(xDim), yDim_(yDim), channels_(channels) {
-    cudaMalloc(&bytes_,  xDim_ * yDim_ * channels_ * sizeof(unsigned char));
+    cudaMalloc(&bytes_,  xDim_ * yDim_ * channels_ * sizeof(uint8_t));
 }
 
 ImageGPU::ImageGPU(const ImageGPU& other) : xDim_(other.xDim_), yDim_(other.yDim_), channels_(other.channels_) {
-    size_t byteSize = xDim_ * yDim_ * channels_ * sizeof(unsigned char);
+    size_t byteSize = xDim_ * yDim_ * channels_ * sizeof(uint8_t);
     cudaMalloc(&bytes_, byteSize);
     cudaMemcpy(bytes_, other.bytes_, byteSize, cudaMemcpyDeviceToDevice);
 }
@@ -38,19 +38,19 @@ size_t ImageGPU::channels() const {
 
 Image ImageGPU::toHost() const {
     Image result(xDim_, yDim_, channels_);
-    cudaMemcpy(result.bytes_, bytes_, xDim_ * yDim_ * channels_ * sizeof(unsigned char), cudaMemcpyDeviceToHost);
+    cudaMemcpy(result.bytes_, bytes_, xDim_ * yDim_ * channels_ * sizeof(uint8_t), cudaMemcpyDeviceToHost);
     return result;
 }
 
-ImageGPU::Ref::Ref(size_t xDim, size_t yDim, size_t channels, unsigned char* bytes) : xDim_(xDim), yDim_(yDim), channels_(channels), bytes_(bytes) {}
+ImageGPU::Ref::Ref(size_t xDim, size_t yDim, size_t channels, uint8_t* bytes) : xDim_(xDim), yDim_(yDim), channels_(channels), bytes_(bytes) {}
 
 // Ref access operations
 
-__device__ unsigned char& ImageGPU::Ref::operator()(size_t x, size_t y, size_t channel) {
+__device__ uint8_t& ImageGPU::Ref::operator()(size_t x, size_t y, size_t channel) {
     return bytes_[y * xDim_ * channels_ + x * channels_ + channel];
 }
 
-__device__ const unsigned char& ImageGPU::Ref::operator()(size_t x, size_t y, size_t channel) const {
+__device__ const uint8_t& ImageGPU::Ref::operator()(size_t x, size_t y, size_t channel) const {
     return bytes_[y * xDim_ * channels_ + x * channels_ + channel];
 }
 

@@ -9,7 +9,7 @@
 class ImageGPU {
     friend class Image;
     size_t xDim_, yDim_, channels_;
-    unsigned char* bytes_;
+    uint8_t* bytes_;
 
    public:
     ImageGPU();
@@ -27,12 +27,12 @@ class ImageGPU {
     class Ref {
         friend class ImageGPU;
         size_t xDim_, yDim_, channels_;
-        unsigned char* bytes_;
+        uint8_t* bytes_;
 
-        Ref(size_t xDim, size_t yDim, size_t channels, unsigned char* bytes);
+        Ref(size_t xDim, size_t yDim, size_t channels, uint8_t* bytes);
        public:
-        __device__ unsigned char& operator()(size_t x, size_t y, size_t channelIndex);
-        __device__ const unsigned char& operator()(size_t x, size_t y, size_t channelIndex) const;
+        __device__ uint8_t& operator()(size_t x, size_t y, size_t channelIndex);
+        __device__ const uint8_t& operator()(size_t x, size_t y, size_t channelIndex) const;
 
         __device__ size_t xDim() const;
         __device__ size_t yDim() const;

@@ -21,6 +21,8 @@ class Image {
     size_t yDim() const;
     size_t channels() const;
 
+    const uint8_t* bytes() const;
+
     ImageGPU toDevice();
 
     uint8_t& operator()(size_t x, size_t y, size_t channel);

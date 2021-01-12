@@ -37,6 +37,10 @@ size_t Image::channels() const {
     return channels_;
 }
 
+const uint8_t* Image::bytes() const {
+    return bytes_;
+}
+
 ImageGPU Image::toDevice() {
     ImageGPU result(yDim_, xDim_, channels_);
     cudaMemcpy(result.bytes_, bytes_, xDim_ * yDim_ * channels_ * sizeof(uint8_t), cudaMemcpyHostToDevice);

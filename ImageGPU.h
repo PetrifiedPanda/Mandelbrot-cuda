@@ -22,6 +22,8 @@ class ImageGPU {
     size_t yDim() const;
     size_t channels() const;
 
+    const uint8_t* bytes() const;
+
     Image toHost() const;
 
     class Ref {

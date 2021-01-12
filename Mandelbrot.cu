@@ -165,8 +165,8 @@ Image mandelbrotGPU(size_t size, int maxIts, double zoom, int xOffset, int yOffs
     int suggestedBlockSize;
     cudaOccupancyMaxPotentialBlockSize(&suggestedMinGridSize, &suggestedBlockSize, mandelbrotKernel);
 
-    size_t blockDimX = sqrt(suggestedBlockSize);
-    size_t blockDimY = blockDimX;
+    unsigned int blockDimX = sqrt(suggestedBlockSize);
+    unsigned int blockDimY = blockDimX;
     dim3 blockDim(blockDimX, blockDimY);
     dim3 gridDim(ceil(static_cast<double>(xDim) / blockDimX), ceil(static_cast<double>(yDim) / blockDimY));
 

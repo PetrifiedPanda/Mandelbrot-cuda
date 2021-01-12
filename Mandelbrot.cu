@@ -107,21 +107,13 @@ __host__ __device__ int mandelbrotIteration(int pX, int pY, size_t xDim, size_t 
     return it;
 }
 
-template <class ImageType>
-__host__ __device__ void colorPixel(ImageType& image, size_t x, size_t y, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors, const Color palette[16]) {
-    int it = mandelbrotIteration(x, y, image.xDim(), image.yDim(), maxIts, zoom, xOffset, yOffset);
+__host__ __device__ Color colorPixel(size_t x, size_t y, size_t xDim, size_t yDim, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors, const Color palette[16]) {
+    int it = mandelbrotIteration(x, y, xDim, yDim, maxIts, zoom, xOffset, yOffset);
 
     Color clr = pickColor(strategy, it, maxIts, x, y, palette);
     if (invertColors)
         clr.invert();
-
-    if (strategy == ColorStrategy::GRAYSCALE)
-        image(x, y, 0) = clr.r;
-    else {
-        image(x, y, 0) = clr.r;
-        image(x, y, 1) = clr.g;
-        image(x, y, 2) = clr.b;
-    }
+    return clr;
 }
 
 Image mandelbrotCPU(size_t size, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors) {
@@ -132,7 +124,15 @@ Image mandelbrotCPU(size_t size, int maxIts, double zoom, int xOffset, int yOffs
     #pragma omp parallel for collapse(2)
     for (int x = 0; x < xDim; ++x) {
         for (int y = 0; y < yDim; ++y) {
-            colorPixel(image, x, y, maxIts, zoom, xOffset, yOffset, strategy, invertColors, h_palette);
+            Color clr = colorPixel(x, y, xDim, yDim, maxIts, zoom, xOffset, yOffset, strategy, invertColors, h_palette);
+
+            if (strategy == ColorStrategy::GRAYSCALE)
+                image(x, y, 0) = clr.r;
+            else {
+                image(x, y, 0) = clr.r;
+                image(x, y, 1) = clr.g;
+                image(x, y, 2) = clr.b;
+            }
         }
     }
 
@@ -150,8 +150,17 @@ __global__ void mandelbrotKernel(ImageGPU::Ref image, int maxIts, double zoom, i
     int y = pixelIndex / image.xDim();
     int x = pixelIndex - y * image.xDim();
     
-    if (x < image.xDim() && y < image.yDim())
-        colorPixel(image, x, y, maxIts, zoom, xOffset, yOffset, strategy, invertColors, d_palette);
+    if (x < image.xDim() && y < image.yDim()) {
+        Color clr = colorPixel(x, y, image.xDim(), image.yDim(), maxIts, zoom, xOffset, yOffset, strategy, invertColors, d_palette);
+
+        if (strategy == ColorStrategy::GRAYSCALE)
+            image(x, y, 0) = clr.r;
+        else {
+            image(x, y, 0) = clr.r;
+            image(x, y, 1) = clr.g;
+            image(x, y, 2) = clr.b;
+        }
+    }
 }
 
 

@@ -8,7 +8,6 @@ set(CMAKE_C_STANDARD 99)
 project(${This} LANGUAGES CUDA C CXX)
 
 set(Sources
-    Main.cpp
     Image.cpp
     Mandelbrot.cu
     ImageGPU.cu
@@ -16,9 +15,12 @@ set(Sources
 
 find_package(OpenMP)
 
-add_executable(${This} ${Sources})
+add_library(${This} ${Sources})
 set_target_properties(${This} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_include_directories(${This} INTERFACE ./)
 
 if (OpenMP_CXX_FOUND)
     target_link_libraries(${This} OpenMP::OpenMP_CXX)
 endif()
+
+add_subdirectory(Demo)

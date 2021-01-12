@@ -1,8 +1,8 @@
 #include <iostream>
 #include <chrono>
 
-#include "Image.h"
-#include "Mandelbrot.h"
+#include <Image.h>
+#include <Mandelbrot.h>
 
 int main() {
     std::cout << "Generating Image!\n";

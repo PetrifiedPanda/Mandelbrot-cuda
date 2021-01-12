@@ -6,7 +6,7 @@
 
 struct Color {
     uint8_t r, g, b;
-    __host__ __device__ constexpr Color() : r(0), g(0), b() {}
+    __host__ __device__ constexpr Color() : r(0), g(0), b(0) {}
     __host__ __device__ constexpr Color(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
     __host__ __device__ Color& invert() {
         r = 255 - r;

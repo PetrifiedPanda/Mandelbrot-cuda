@@ -62,7 +62,7 @@ __device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int 
             return Color(color, color, color);
         }
         case ColorStrategy::CONTINUOUS: { 
-            // TODO
+            // TODO: Fix
             double dIterations = static_cast<double>(iterations);
             if (iterations < maxIterations) {
                 double logZN = log(static_cast<double>(x * x + y * y)) / 2;

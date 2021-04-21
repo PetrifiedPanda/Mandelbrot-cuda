@@ -41,7 +41,7 @@ const uint8_t* Image::bytes() const {
     return bytes_;
 }
 
-ImageGPU Image::toDevice() {
+ImageGPU Image::to_device() {
     ImageGPU result(rows_, cols_, channels_);
     cudaMemcpy(result.bytes_, bytes_, cols_ * rows_ * channels_ * sizeof(uint8_t), cudaMemcpyHostToDevice);
     return result;
@@ -58,7 +58,7 @@ const uint8_t& Image::operator()(size_t col, size_t row, size_t channel) const {
 }
 
 
-void Image::writePPM(const std::string& filename) const {
+void Image::write_ppm(const std::string& filename) const {
     std::ofstream writer(filename, std::ios::binary);
     std::string ppmFormat = channels_ == 1 ? "P5" : "P6";
     writer << ppmFormat << "\n" << cols_ << " " << rows_ << "\n255\n";
@@ -66,7 +66,7 @@ void Image::writePPM(const std::string& filename) const {
     writer.close();
 }
 
-Image Image::readPPM(const std::string& filename) {
+Image Image::read_ppm(const std::string& filename) {
     std::ifstream reader(filename, std::ios::binary);
     std::string ppmFormat;
     reader >> ppmFormat;

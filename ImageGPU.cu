@@ -40,7 +40,7 @@ const uint8_t* ImageGPU::bytes() const {
     return bytes_;
 }
 
-Image ImageGPU::toHost() const {
+Image ImageGPU::to_host() const {
     Image result(rows_, cols_, channels_);
     cudaMemcpy(result.bytes_, bytes_, cols_ * rows_ * channels_ * sizeof(uint8_t), cudaMemcpyDeviceToHost);
     return result;
@@ -72,6 +72,6 @@ __device__ size_t ImageGPU::Ref::cols() const {
     return channels_;
 }
 
-ImageGPU::Ref ImageGPU::getRef() {
+ImageGPU::Ref ImageGPU::get_ref() {
     return Ref(rows_, cols_, channels_, bytes_);
 }

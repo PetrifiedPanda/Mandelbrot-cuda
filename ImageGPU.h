@@ -24,7 +24,7 @@ class ImageGPU {
 
     const uint8_t* bytes() const;
 
-    Image toHost() const;
+    Image to_host() const;
 
     class Ref {
         friend class ImageGPU;
@@ -41,5 +41,5 @@ class ImageGPU {
         __device__ size_t channels() const;
     };
 
-    Ref getRef();
+    Ref get_ref();
 };

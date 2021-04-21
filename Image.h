@@ -23,14 +23,14 @@ class Image {
 
     const uint8_t* bytes() const;
 
-    ImageGPU toDevice();
+    ImageGPU to_device();
 
     uint8_t& operator()(size_t col, size_t row, size_t channel);
     const uint8_t& operator()(size_t col, size_t row, size_t channel) const;
 
-    void writePPM(const std::string& filename) const;
+    void write_ppm(const std::string& filename) const;
 
-    static Image readPPM(const std::string& filename);
+    static Image read_ppm(const std::string& filename);
 };
 
 #include "ImageGPU.h"

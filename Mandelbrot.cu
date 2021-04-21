@@ -116,8 +116,17 @@ __host__ __device__ Color colorPixel(size_t x, size_t y, size_t xDim, size_t yDi
     return clr;
 }
 
-Image mandelbrotCPU(size_t size, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors) {
-    Image image(size * 1.5, size, strategy == ColorStrategy::GRAYSCALE ? 1 : 3);
+size_t decideChannels(ColorStrategy strategy, bool fourChannels) {
+    if (strategy == ColorStrategy::GRAYSCALE)
+        return 1;
+    else if (fourChannels)
+        return 4;
+    else
+        return 3;
+}
+
+Image mandelbrotCPU(size_t size, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors, bool fourChannels) {
+    Image image(size * 1.5, size, decideChannels(strategy, fourChannels));
     size_t xDim = image.xDim();
     size_t yDim = image.yDim();
 
@@ -164,9 +173,10 @@ __global__ void mandelbrotKernel(ImageGPU::Ref image, int maxIts, double zoom, i
 }
 
 
-Image mandelbrotGPU(size_t size, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors) {
+Image mandelbrotGPU(size_t size, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors, bool fourChannels) {
     cudaMemcpyToSymbol(d_palette, h_palette, c_paletteSize * sizeof(Color));
-    ImageGPU gpuImage(size * 1.5, size, strategy == ColorStrategy::GRAYSCALE ? 1 : 3);
+
+    ImageGPU gpuImage(size * 1.5, size, decideChannels(strategy, fourChannels));
     size_t xDim = gpuImage.xDim();
     size_t yDim = gpuImage.yDim();
 

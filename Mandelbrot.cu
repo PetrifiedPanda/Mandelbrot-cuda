@@ -88,11 +88,11 @@ __device__ __host__ Color pickColor(ColorStrategy strategy, int iterations, int 
     return Color(0, 0, 0);
 }
 
-__host__ __device__ int mandelbrotIteration(int pX, int pY, size_t xDim, size_t yDim, int maxIts, double zoom, int xOffset, int yOffset) {
-    double scaledXOffset = xOffset / static_cast<int>(xDim) * 3;
-    double scaledYOffset = yOffset / static_cast<int>(yDim) * 2;
-    double scaledX = scale(pX + xOffset, xDim, -2 / zoom + scaledXOffset, 1 / zoom + scaledXOffset);
-    double scaledY = scale(pY + yOffset, yDim, -1 / zoom + scaledYOffset, 1 / zoom + scaledYOffset);
+__host__ __device__ int mandelbrotIteration(int pX, int pY, size_t cols, size_t rows, int maxIts, double zoom, int xOffset, int yOffset) {
+    double scaledXOffset = xOffset / static_cast<int>(cols) * 3;
+    double scaledYOffset = yOffset / static_cast<int>(rows) * 2;
+    double scaledX = scale(pX + xOffset, cols, -2 / zoom + scaledXOffset, 1 / zoom + scaledXOffset);
+    double scaledY = scale(pY + yOffset, rows, -1 / zoom + scaledYOffset, 1 / zoom + scaledYOffset);
 
     double x = 0.0;
     double y = 0.0; 
@@ -107,8 +107,8 @@ __host__ __device__ int mandelbrotIteration(int pX, int pY, size_t xDim, size_t 
     return it;
 }
 
-__host__ __device__ Color colorPixel(size_t x, size_t y, size_t xDim, size_t yDim, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors, const Color palette[16]) {
-    int it = mandelbrotIteration(x, y, xDim, yDim, maxIts, zoom, xOffset, yOffset);
+__host__ __device__ Color colorPixel(size_t x, size_t y, size_t cols, size_t rows, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors, const Color palette[16]) {
+    int it = mandelbrotIteration(x, y, cols, rows, maxIts, zoom, xOffset, yOffset);
 
     Color clr = pickColor(strategy, it, maxIts, x, y, palette);
     if (invertColors)
@@ -126,14 +126,14 @@ size_t decideChannels(ColorStrategy strategy, bool fourChannels) {
 }
 
 Image mandelbrotCPU(size_t size, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors, bool fourChannels) {
-    Image image(size * 1.5, size, decideChannels(strategy, fourChannels));
-    size_t xDim = image.xDim();
-    size_t yDim = image.yDim();
+    Image image(size, size * 1.5, decideChannels(strategy, fourChannels));
+    size_t cols = image.cols();
+    size_t rows = image.rows();
 
     #pragma omp parallel for collapse(2)
-    for (int x = 0; x < xDim; ++x) {
-        for (int y = 0; y < yDim; ++y) {
-            Color clr = colorPixel(x, y, xDim, yDim, maxIts, zoom, xOffset, yOffset, strategy, invertColors, h_palette);
+    for (int x = 0; x < cols; ++x) {
+        for (int y = 0; y < rows; ++y) {
+            Color clr = colorPixel(x, y, cols, rows, maxIts, zoom, xOffset, yOffset, strategy, invertColors, h_palette);
 
             if (strategy == ColorStrategy::GRAYSCALE)
                 image(x, y, 0) = clr.r;
@@ -156,11 +156,11 @@ __device__ int getThreadId() {
 
 __global__ void mandelbrotKernel(ImageGPU::Ref image, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors) {
     int pixelIndex = getThreadId();
-    int y = pixelIndex / image.xDim();
-    int x = pixelIndex - y * image.xDim();
+    int y = pixelIndex / image.cols();
+    int x = pixelIndex - y * image.cols();
     
-    if (x < image.xDim() && y < image.yDim()) {
-        Color clr = colorPixel(x, y, image.xDim(), image.yDim(), maxIts, zoom, xOffset, yOffset, strategy, invertColors, d_palette);
+    if (x < image.cols() && y < image.rows()) {
+        Color clr = colorPixel(x, y, image.cols(), image.rows(), maxIts, zoom, xOffset, yOffset, strategy, invertColors, d_palette);
 
         if (strategy == ColorStrategy::GRAYSCALE)
             image(x, y, 0) = clr.r;
@@ -176,9 +176,9 @@ __global__ void mandelbrotKernel(ImageGPU::Ref image, int maxIts, double zoom, i
 Image mandelbrotGPU(size_t size, int maxIts, double zoom, int xOffset, int yOffset, ColorStrategy strategy, bool invertColors, bool fourChannels) {
     cudaMemcpyToSymbol(d_palette, h_palette, c_paletteSize * sizeof(Color));
 
-    ImageGPU gpuImage(size * 1.5, size, decideChannels(strategy, fourChannels));
-    size_t xDim = gpuImage.xDim();
-    size_t yDim = gpuImage.yDim();
+    ImageGPU gpuImage(size, size * 1.5, decideChannels(strategy, fourChannels));
+    size_t cols = gpuImage.cols();
+    size_t rows = gpuImage.rows();
 
     int suggestedMinGridSize;
     int suggestedBlockSize;
@@ -187,7 +187,7 @@ Image mandelbrotGPU(size_t size, int maxIts, double zoom, int xOffset, int yOffs
     unsigned int blockDimX = sqrt(suggestedBlockSize);
     unsigned int blockDimY = blockDimX;
     dim3 blockDim(blockDimX, blockDimY);
-    dim3 gridDim(ceil(static_cast<double>(xDim) / blockDimX), ceil(static_cast<double>(yDim) / blockDimY));
+    dim3 gridDim(ceil(static_cast<double>(cols) / blockDimX), ceil(static_cast<double>(rows) / blockDimY));
 
     mandelbrotKernel<<<gridDim, blockDim>>>(gpuImage.getRef(), maxIts, zoom, xOffset, yOffset, strategy, invertColors);
     cudaDeviceSynchronize();

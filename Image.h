@@ -7,26 +7,26 @@ class ImageGPU;
 
 class Image {
     friend class ImageGPU;
-    size_t xDim_, yDim_, channels_;
+    size_t rows_, cols_, channels_;
     uint8_t* bytes_;
 
    public:
     Image();
-    Image(size_t xDim, size_t yDim, size_t channels = 3);
+    Image(size_t rows, size_t cols, size_t channels = 3);
     Image(const Image& other);
     Image(Image&& other);
     ~Image();
 
-    size_t xDim() const;
-    size_t yDim() const;
+    size_t rows() const;
+    size_t cols() const;
     size_t channels() const;
 
     const uint8_t* bytes() const;
 
     ImageGPU toDevice();
 
-    uint8_t& operator()(size_t x, size_t y, size_t channel);
-    const uint8_t& operator()(size_t x, size_t y, size_t channel) const;
+    uint8_t& operator()(size_t col, size_t row, size_t channel);
+    const uint8_t& operator()(size_t col, size_t row, size_t channel) const;
 
     void writePPM(const std::string& filename) const;
 

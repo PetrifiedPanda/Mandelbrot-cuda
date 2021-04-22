@@ -39,8 +39,8 @@ constexpr Color h_palette[c_palette_size] = {
 
 __constant__ Color d_palette[c_palette_size];
 
-__device__ __host__ double scale(int x, int rangeSize, double begin, double end) {
-    return begin + (end - begin) * x / rangeSize;
+__device__ __host__ double scale(int x, int range_size, double begin, double end) {
+    return begin + (end - begin) * x / range_size;
 }
 
 __device__ __host__ double lerp(double start, double end, double amount) {
@@ -180,16 +180,16 @@ Image mandelbrot_gpu(size_t size, int max_its, double zoom, int x_offset, int y_
     size_t cols = gpuImage.cols();
     size_t rows = gpuImage.rows();
 
-    int suggestedMinGridSize;
-    int suggestedBlockSize;
-    cudaOccupancyMaxPotentialBlockSize(&suggestedMinGridSize, &suggestedBlockSize, mandelbrot_kernel);
+    int suggested_min_grid_size;
+    int suggested_block_size;
+    cudaOccupancyMaxPotentialBlockSize(&suggested_min_grid_size, &suggested_block_size, mandelbrot_kernel);
 
-    unsigned int blockDimX = sqrt(suggestedBlockSize);
-    unsigned int blockDimY = blockDimX;
-    dim3 blockDim(blockDimX, blockDimY);
-    dim3 gridDim(ceil(static_cast<double>(cols) / blockDimX), ceil(static_cast<double>(rows) / blockDimY));
+    unsigned int block_dim_x = sqrt(suggested_block_size);
+    unsigned int block_dim_y = block_dim_x;
+    dim3 block_dim(block_dim_x, block_dim_y);
+    dim3 grid_dim(ceil(static_cast<double>(cols) / block_dim_x), ceil(static_cast<double>(rows) / block_dim_y));
 
-    mandelbrot_kernel<<<gridDim, blockDim>>>(gpuImage.get_ref(), max_its, zoom, x_offset, y_offset, strategy, invert_colors);
+    mandelbrot_kernel<<<grid_dim, block_dim>>>(gpuImage.get_ref(), max_its, zoom, x_offset, y_offset, strategy, invert_colors);
     cudaDeviceSynchronize();
 
     return gpuImage.to_host();

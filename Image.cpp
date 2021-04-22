@@ -60,27 +60,27 @@ const uint8_t& Image::operator()(size_t col, size_t row, size_t channel) const {
 
 void Image::write_ppm(const std::string& filename) const {
     std::ofstream writer(filename, std::ios::binary);
-    std::string ppmFormat = channels_ == 1 ? "P5" : "P6";
-    writer << ppmFormat << "\n" << cols_ << " " << rows_ << "\n255\n";
+    std::string ppm_format = channels_ == 1 ? "P5" : "P6";
+    writer << ppm_format << "\n" << cols_ << " " << rows_ << "\n255\n";
     writer.write(reinterpret_cast<char*>(bytes_), rows_ * cols_ * channels_);
     writer.close();
 }
 
 Image Image::read_ppm(const std::string& filename) {
     std::ifstream reader(filename, std::ios::binary);
-    std::string ppmFormat;
-    reader >> ppmFormat;
-    size_t channels = ppmFormat == "P5" ? 1 : 3;
-    size_t xDim, yDim;
+    std::string ppm_format;
+    reader >> ppm_format;
+    size_t channels = ppm_format == "P5" ? 1 : 3;
+    size_t cols, rows;
     int b;
-    reader >> xDim >> yDim >> b;
+    reader >> cols >> rows >> b;
     if (b != 255)
         throw std::runtime_error("Cannot read file"); // TODO: Make this unnecessary
 
     reader.ignore(256, '\n');
 
-    Image result(xDim, yDim, channels);
-    reader.read(reinterpret_cast<char*>(result.bytes_), xDim * yDim * channels);
+    Image result(rows, cols, channels);
+    reader.read(reinterpret_cast<char*>(result.bytes_), cols * rows * channels);
 
     reader.close();
     return result;

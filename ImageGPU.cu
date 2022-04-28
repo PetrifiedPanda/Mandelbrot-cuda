@@ -4,6 +4,8 @@
 
 #include <cuda.h>
 
+namespace mandelbrot {
+
 ImageGPU::ImageGPU() : rows_(0), cols_(0), channels_(0), bytes_(nullptr) {}
 
 ImageGPU::ImageGPU(size_t rows, size_t cols, size_t channels) : rows_(rows), cols_(cols), channels_(channels) {
@@ -75,3 +77,6 @@ __device__ size_t ImageGPU::Ref::cols() const {
 ImageGPU::Ref ImageGPU::get_ref() {
     return Ref(rows_, cols_, channels_, bytes_);
 }
+
+} // namespace mandelbrot
+

@@ -4,6 +4,8 @@
 #include <Image.h>
 #include <mandelbrot.h>
 
+using namespace mandelbrot;
+
 int main() {
     std::cout << "Generating Image!\n";
     auto start = std::chrono::high_resolution_clock::now();

@@ -4,6 +4,8 @@
 
 #include "ImageGPU.h"
 
+namespace mandelbrot {
+
 struct Color {
     uint8_t r, g, b;
     __host__ __device__ constexpr Color() : r(0), g(0), b(0) {}
@@ -194,3 +196,6 @@ Image mandelbrot_gpu(size_t size, int max_its, double zoom, int x_offset, int y_
 
     return gpuImage.to_host();
 }
+
+} // namespace mandelbrot
+

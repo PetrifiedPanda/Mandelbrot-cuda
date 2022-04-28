@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <string>
 
+namespace mandelbrot {
+
 class ImageGPU;
 
 class Image {
@@ -33,4 +35,7 @@ class Image {
     static Image read_ppm(const std::string& filename);
 };
 
+} // namespace mandelbrot
+
 #include "ImageGPU.h"
+

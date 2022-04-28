@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+namespace mandelbrot {
+
 Image::Image() : rows_(0), cols_(0), channels_(0), bytes_(nullptr) {}
 
 Image::Image(size_t rows, size_t cols, size_t channels) : rows_(rows), cols_(cols), channels_(channels) {
@@ -85,3 +87,6 @@ Image Image::read_ppm(const std::string& filename) {
     reader.close();
     return result;
 }
+
+} // namespace mandelbrot
+

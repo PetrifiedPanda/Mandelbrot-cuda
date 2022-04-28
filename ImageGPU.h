@@ -6,6 +6,8 @@
 
 #include "Image.h"
 
+namespace mandelbrot {
+
 class ImageGPU {
     friend class Image;
     size_t rows_, cols_, channels_;
@@ -43,3 +45,6 @@ class ImageGPU {
 
     Ref get_ref();
 };
+
+} // namespace mandelbrot
+

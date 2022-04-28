@@ -9,3 +9,4 @@ enum class ColorStrategy {
 Image mandelbrot_cpu(size_t size, int max_its, double zoom, int x_offset, int y_offset, ColorStrategy strategy, bool invert_colors = false, bool four_channels = false);
 
 Image mandelbrot_gpu(size_t size, int max_its, double zoom, int x_offset, int y_offset, ColorStrategy strategy, bool invert_colors = false, bool four_channels = false);
+

@@ -8,7 +8,7 @@ set(This Mandelbrot-demo)
 project(${This})
 
 set(Sources
-    Main.cpp
+    main.cpp
 )
 
 add_executable(${This} ${Sources})

@@ -1,4 +1,4 @@
-#include "Mandelbrot.h"
+#include "mandelbrot.h"
 
 #include <omp.h>
 

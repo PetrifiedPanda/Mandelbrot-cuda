@@ -9,7 +9,7 @@ project(${This} LANGUAGES CUDA C CXX)
 
 set(Sources
     Image.cpp
-    Mandelbrot.cu
+    mandelbrot.cu
     ImageGPU.cu
 )
 
@@ -23,4 +23,4 @@ if (OpenMP_CXX_FOUND)
     target_link_libraries(${This} OpenMP::OpenMP_CXX)
 endif()
 
-add_subdirectory(Demo)
+add_subdirectory(demo)

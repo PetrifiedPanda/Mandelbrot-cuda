@@ -2,7 +2,7 @@
 #include <chrono>
 
 #include <Image.h>
-#include <Mandelbrot.h>
+#include <mandelbrot.h>
 
 int main() {
     std::cout << "Generating Image!\n";

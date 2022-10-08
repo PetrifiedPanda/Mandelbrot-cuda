@@ -18,9 +18,9 @@ struct Color {
     }
 };
 
-constexpr size_t c_palette_size = 16;
+constexpr size_t C_PALLETE_SIZE = 16;
 
-constexpr Color h_palette[c_palette_size] = {
+constexpr Color H_PALLETTE[C_PALLETE_SIZE] = {
     Color(66, 30, 15),
     Color(25, 7, 26),
     Color(9, 1, 47),
@@ -39,7 +39,7 @@ constexpr Color h_palette[c_palette_size] = {
     Color(106, 52, 3),
 };
 
-__constant__ Color d_palette[c_palette_size];
+__constant__ Color d_palette[C_PALLETE_SIZE];
 
 __device__ __host__ double scale(int x, int range_size, double begin, double end) {
     return begin + (end - begin) * x / range_size;
@@ -57,7 +57,7 @@ __device__ __host__ Color lerp(Color start, Color end, double amount) {
     return Color(lerp(start.r, end.r, amount), lerp(start.g, end.g, amount), lerp(start.b, end.b, amount));
 }
 
-__device__ __host__ Color pick_color(ColorStrategy strategy, int iterations, int max_iterations, int x, int y, const Color palette[c_palette_size]) {
+__device__ __host__ Color pick_color(ColorStrategy strategy, int iterations, int max_iterations, int x, int y, const Color palette[C_PALLETE_SIZE]) {
     switch (strategy) {
         case ColorStrategy::GRAYSCALE: {
             uint8_t color = scale(iterations, max_iterations, 0, 255);
@@ -73,8 +73,8 @@ __device__ __host__ Color pick_color(ColorStrategy strategy, int iterations, int
             }
             double fractional = double_iterations - floor(static_cast<double>(double_iterations));
 
-            Color color1 = palette[static_cast<size_t>(floor(static_cast<double>(double_iterations))) % c_palette_size];
-            Color color2 = palette[static_cast<size_t>(floor(static_cast<double>(double_iterations)) + 1) % c_palette_size];
+            Color color1 = palette[static_cast<size_t>(floor(static_cast<double>(double_iterations))) % C_PALLETE_SIZE];
+            Color color2 = palette[static_cast<size_t>(floor(static_cast<double>(double_iterations)) + 1) % C_PALLETE_SIZE];
 
             Color final_color = lerp(color1, color2, fractional);
             return final_color;
@@ -82,7 +82,7 @@ __device__ __host__ Color pick_color(ColorStrategy strategy, int iterations, int
         case ColorStrategy::ESCAPETIME: {
             Color clr(0, 0, 0);
             if (iterations < max_iterations)
-                clr = palette[iterations % c_palette_size];
+                clr = palette[iterations % C_PALLETE_SIZE];
 
             return clr;
         }
@@ -135,7 +135,7 @@ Image mandelbrot_cpu(size_t size, int max_its, double zoom, int x_offset, int y_
     #pragma omp parallel for collapse(2)
     for (int x = 0; x < cols; ++x) {
         for (int y = 0; y < rows; ++y) {
-            Color clr = color_pixel(x, y, cols, rows, max_its, zoom, x_offset, y_offset, strategy, invert_colors, h_palette);
+            Color clr = color_pixel(x, y, cols, rows, max_its, zoom, x_offset, y_offset, strategy, invert_colors, H_PALLETTE);
 
             if (strategy == ColorStrategy::GRAYSCALE)
                 image(x, y, 0) = clr.r;
@@ -176,7 +176,7 @@ __global__ void mandelbrot_kernel(ImageGPU::Ref image, int max_its, double zoom,
 
 
 Image mandelbrot_gpu(size_t size, int max_its, double zoom, int x_offset, int y_offset, ColorStrategy strategy, bool invert_colors, bool four_channels) {
-    cudaMemcpyToSymbol(d_palette, h_palette, c_palette_size * sizeof(Color));
+    cudaMemcpyToSymbol(d_palette, H_PALLETTE, C_PALLETE_SIZE * sizeof(Color));
 
     ImageGPU gpuImage(size, size * 1.5, decide_channels(strategy, four_channels));
     size_t cols = gpuImage.cols();
